@@ -1,8 +1,11 @@
 <?php
+
 namespace SoftUniBlogBundle\Entity;
+
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
+
 /**
  * User
  *
@@ -19,51 +22,64 @@ class User implements UserInterface
      * @ORM\GeneratedValue(strategy="AUTO")
      */
     private $id;
+
     /**
      * @var string
      *
      * @ORM\Column(name="email", type="string", length=100, unique=true)
      */
     private $email;
+
     /**
      * @var string
      *
      * @ORM\Column(name="fullName", type="string", length=255)
      */
     private $fullName;
+
     /**
      * @var string
      *
      * @ORM\Column(name="password", type="string", length=255)
      */
     private $password;
+
     /**
      * @var ArrayCollection
      *
-     * @ORM\OneToMany(targetEntity="SoftUniBlogBundle\Entity\Article", mappedBy="author")
+     * @ORM\ManyToMany(targetEntity="SoftUniBlogBundle\Entity\Role")
+     * @ORM\JoinTable(name="users_roles",
+     *      joinColumns={@ORM\JoinColumn(name="userId", referencedColumnName="id")},
+     *      inverseJoinColumns={@ORM\JoinColumn(name="userRoles", referencedColumnName="id")})
+     */
+    private $roles;
+
+    /**
+     * @var ArrayCollection
+     *
+     * @ORM\OneToMany(targetEntity="\SoftUniBlogBundle\Entity\Article", mappedBy="author")
      */
     private $articles;
+
     /**
-     * @return \Doctrine\Common\Collections\Collection
+     * @return \Doctrine\Common\Collections\ArrayCollection
      */
     public function getArticles()
     {
         return $this->articles;
     }
+
     /**
      * @param \SoftUniBlogBundle\Entity\Article $article
-     *
      * @return User
      */
-    public function addPost (Article $article)
+    public function addPost(Article $article)
     {
         $this->articles[] = $article;
+
         return $this;
     }
-    public function __construct()
-    {
-        $this->articles = new ArrayCollection();
-    }
+
     /**
      * Get id
      *
@@ -73,6 +89,7 @@ class User implements UserInterface
     {
         return $this->id;
     }
+
     /**
      * Set email
      *
@@ -83,8 +100,10 @@ class User implements UserInterface
     public function setEmail($email)
     {
         $this->email = $email;
+
         return $this;
     }
+
     /**
      * Get email
      *
@@ -94,6 +113,7 @@ class User implements UserInterface
     {
         return $this->email;
     }
+
     /**
      * Set fullName
      *
@@ -104,8 +124,10 @@ class User implements UserInterface
     public function setFullName($fullName)
     {
         $this->fullName = $fullName;
+
         return $this;
     }
+
     /**
      * Get fullName
      *
@@ -115,6 +137,7 @@ class User implements UserInterface
     {
         return $this->fullName;
     }
+
     /**
      * Set password
      *
@@ -125,8 +148,10 @@ class User implements UserInterface
     public function setPassword($password)
     {
         $this->password = $password;
+
         return $this;
     }
+
     /**
      * Get password
      *
@@ -136,6 +161,7 @@ class User implements UserInterface
     {
         return $this->password;
     }
+
     /**
      * Returns the roles granted to the user.
      *
@@ -154,8 +180,38 @@ class User implements UserInterface
      */
     public function getRoles()
     {
-        return ['ROLE_USER'];
+        $stringRoles = [];
+        foreach ($this->roles as $role)
+        {
+            /**@var $role Role */
+            $stringRoles[] = is_string($role) ? $role : $role->getRole();
+        }
+        return $stringRoles;
     }
+
+    /**
+     * @param \SoftUniBlogBundle\Entity\Role $role
+     *
+     * @return $this
+     */
+    public function addRole(Role $role)
+    {
+        $this->roles[] = $role;
+
+        return $this;
+    }
+
+    /**
+     * @param array $roles
+     * @return $this
+     */
+    public function setRoles(array $roles)
+    {
+        $this->roles = $roles;
+
+        return $this;
+    }
+
     /**
      * Returns the salt that was originally used to encode the password.
      *
@@ -167,6 +223,7 @@ class User implements UserInterface
     {
         return null;
     }
+
     /**
      * Returns the username used to authenticate the user.
      *
@@ -176,6 +233,7 @@ class User implements UserInterface
     {
         return $this->email;
     }
+
     /**
      * Removes sensitive data from the user.
      *
@@ -186,9 +244,29 @@ class User implements UserInterface
     {
         // TODO: Implement eraseCredentials() method.
     }
-
-    function __toString()
+	
+	function __toString()
     {
         return $this->fullName;
     }
+
+    public function __construct()
+    {
+        $this->articles = new ArrayCollection();
+        $this->roles = new ArrayCollection();
+    }
+
+    /**
+     * @param Article $article
+     * @return bool
+     */
+    public function isAuthor(Article $article)
+    {
+        return $this->getId() == $article->getAuthorId();
+    }
+
+    public function isAdmin() {
+        return in_array("ROLE_ADMIN", $this->getRoles());
+    }
 }
+
