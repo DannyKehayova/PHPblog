@@ -5,10 +5,12 @@ namespace SoftUniBlogBundle\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
+use SoftUniBlogBundle\Entity\Role;
 use SoftUniBlogBundle\Entity\User;
 use SoftUniBlogBundle\Form\UserType;
 use SoftUniBlogBundle\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\BrowserKit\Response;
 use Symfony\Component\HttpFoundation\Request;
 
 class UserController extends Controller
@@ -34,6 +36,12 @@ class UserController extends Controller
                 ->encodePassword($user, $user->getPassword());
             $user->setPassword($password);
 
+            // 3.1) Assign the user a role USER
+            $roleRepository = $this->getDoctrine()->getRepository(Role::class);
+            $userRole = $roleRepository->findOneBy(['name' => 'ROLE_USER']);
+
+            $user->addRole($userRole);
+
             // 4) save the User!
             $em = $this->getDoctrine()->getManager();
             $em->persist($user);
@@ -50,8 +58,6 @@ class UserController extends Controller
             array('form' => $form->createView())
         );
     }
-
-
 
     /**
      * @Security("is_granted('IS_AUTHENTICATED_FULLY')")
